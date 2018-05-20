@@ -11,7 +11,7 @@ from HTMLParser import HTMLParser
 
 import re
 
-from util.color import in_red
+from color import in_red
 
 
 class HtmlParse(HTMLParser):
@@ -67,25 +67,25 @@ def etl_html(start_tag, attr, value, html_string):
         else:
             start_pos = 0
             tag_start = False
-        print('start_pos:', i + start_pos)
-        match = end_pattern.search(html_string[i + start_pos:])
+        match = end_pattern.search(html_string[i:])
         if not match:
             print(in_red(u'HTML字符串有误'))
             return None
         end_pos = match.start()
-        match = close_pattern.match(html_string[start_pos:end_pos])
+        match = close_pattern.match(html_string[i + start_pos:i + end_pos +1])
         if not tag_start and match:
             break
         this_tag = parse_tag(html_string[i + start_pos:i + end_pos])
         if this_tag and this_tag['tag'] == '!DOCTYPE':
             i = end_pos + 1
             continue
-        if this_tag and this_tag['tag'] == start_tag and this_tag['attrib'][attr] == value:
+        # if this_tag and this_tag['tag'] == 'div' and 'attrib' in this_tag and 'id' in this_tag['attrib'] and this_tag['attrib']['id'] == 'login-reg-warp':
+        #     print(html_string[i + start_pos:i + end_pos])
+        if this_tag and 'attrib' in this_tag and attr in this_tag['attrib'] and this_tag['tag'] == start_tag and this_tag['attrib'][attr] == value:
             start_flag = True
         if start_flag:
-            result_html += html_string[i:end_pos]
+            result_html += html_string[i:i + end_pos + 1]
         i = i + end_pos + 1
-    print(result_html)
     return result_html
 
 
@@ -94,18 +94,18 @@ def parse_tag(content):
     tag_attr = {}
     for c in ct:
         if '=' not in c:
-            tag_attr.setdefault('tag', c)
+            tag_attr.setdefault('tag', c.replace('<', '').replace('/', '').replace('>', ''))
         else:
             c_ = c.split('=')
-            tag_attr.setdefault('attr', {}).setdefault(c_[0], c_[1])
+            tag_attr.setdefault('attrib', {}).setdefault(c_[0], c_[1].replace('>', '').replace('/>', '').replace('\"', ''))
     return tag_attr
 
 
 # parser = HtmlParse()
 # parser.feed(open('../resources/huxiu.html').read())
 
-with open('../resources/huxiu_n.html', 'w') as f:
-    text = etl_html('div', 'class', 'login-reg-warp-modal', open('../resources/huxiu.html').read())
+with open('resources/huxiu_n.html', 'w') as f:
+    text = etl_html('div', 'class', 'login-reg-warp-modal', open('resources/huxiu.html').read())
     if text:
         f.write(text)
 
